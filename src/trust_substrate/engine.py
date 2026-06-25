@@ -133,7 +133,7 @@ class ScoringEngine:
             with_grain = 0.0
 
         # Efficiency: did they take low-energy routes to outcomes?
-        completed = [e for e in actor.energy_history if e.outcome.value == "completed"]
+        completed = [e for e in actor.energy_history if e.outcome and e.outcome.value == "completed"]
         if completed:
             efficiency = sum(e.energy_spend for e in completed) / max(len(completed), 1)
             efficiency = max(0.0, 1.0 - efficiency / 5.0)  # normalize, cap at 1.0

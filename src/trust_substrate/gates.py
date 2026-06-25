@@ -170,7 +170,7 @@ def evaluate_gate_2(
     overall_alignment = sum(all_scores) / len(all_scores) if all_scores else 0.0
     
     # Fit = high alignment across the operator's primary zones
-    primary_zones = _primary_zones(surface)
+    primary_zones = _primary_zones(surface, actor)
     primary_scores = [zone_alignments.get(z, 0.0) for z in primary_zones]
     primary_avg = sum(primary_scores) / len(primary_scores) if primary_scores else 0.0
     
@@ -200,14 +200,19 @@ def _recent_events(actor: Actor, window: timedelta) -> list[EnergyEvent]:
     return [e for e in actor.energy_history if e.timestamp >= cutoff]
 
 
-def _primary_zones(surface: SurfaceTexture) -> list[str]:
-    """Return the well's primary zone IDs."""
-    return [
-        zid for zid, zg in surface.zones.items()
-        if zg.energy_cost_mean >= sorted(
-            [z.energy_cost_mean for z in surface.zones.values()]
-        )[max(0, len(surface.zones) - 3)]
-    ][-2:] or list(surface.zones.keys())[:1]
+def _primary_zones(surface: SurfaceTexture, actor: Actor | None = None) -> list[str]:
+    """Return the well's primary zone IDs, filtered to zones the actor actually touched meaningfully."""
+    if actor is None:
+        return list(surface.zones.keys())[:2]
+    meaningful_zones = {e.zone for e in actor.energy_history if e.energy_spend >= 1.0}
+    if not meaningful_zones:
+        return list(surface.zones.keys())[:1]
+    candidates = sorted(
+        meaningful_zones,
+        key=lambda z: surface.zones[z].energy_cost_mean,
+        reverse=True,
+    )
+    return candidates[:2]
 
 
 def _suggest_wormhole_target(
