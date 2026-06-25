@@ -23,14 +23,27 @@ from .models import (
     ZoneGrain,
 )
 from .receipts import make_receipt, settle_receipt
+from .satellites import (
+    ArtifactKind,
+    ArtifactPing,
+    ReactionEvent,
+    ReactionKind,
+    SatelliteDeployment,
+    SatelliteFactory,
+    TriangulationRead,
+    TrustLayer,
+    apply_triangulation,
+)
 from .sigma import SigmaEngine
 from .sun import SunDescriptor, scan_repo
 
 __all__ = [
-    "Actor", "DecisionKind", "EnergyEvent", "FlowQueueItem", "Gate", "GateResult",
-    "OrbitSummary", "Outcome", "PredictionReceipt", "ReceiptStatus", "RoutingKind",
-    "ScoringEngine", "SeatPolicy", "SeatSnapshot", "SigmaEngine", "SigmaState",
-    "SunDescriptor", "SurfaceTexture", "Tier", "ZoneGrain", "build_flow_queue",
+    "Actor", "ArtifactKind", "ArtifactPing", "DecisionKind", "EnergyEvent", "FlowQueueItem",
+    "Gate", "GateResult", "OrbitSummary", "Outcome", "PredictionReceipt",
+    "ReactionEvent", "ReactionKind", "ReceiptStatus", "RoutingKind", "SatelliteDeployment",
+    "SatelliteFactory", "ScoringEngine", "SeatPolicy", "SeatSnapshot", "SigmaEngine",
+    "SigmaState", "SunDescriptor", "SurfaceTexture", "Tier", "TriangulationRead",
+    "TrustLayer", "ZoneGrain", "apply_triangulation", "build_flow_queue",
     "evaluate_graduation_readiness", "graduate_to_journeyman", "has_journeyman_capacity",
     "make_receipt", "scan_repo", "seat_snapshot", "settle_receipt",
 ]

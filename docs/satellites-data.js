@@ -1,0 +1,383 @@
+window.SATELLITE_DATA = {
+  "well_id": "mind_lab",
+  "principle": "Satellites triangulate position from reactions to artifacts, not captured identity.",
+  "deployments": [
+    {
+      "satellite_id": "sat_bf1133c3cd3d",
+      "name": "Furthest Edge Tweet Listener",
+      "layer": "edge",
+      "orbit": 1.0,
+      "purpose": "Track reactions to public tweets/pings before identity capture.",
+      "target_grain": "shape_of_trust",
+      "deployed_at": "2026-06-23T18:57:05.767480",
+      "pings": [
+        {
+          "ping_id": "ping_2d4f2f1d7fa0",
+          "satellite_id": "sat_bf1133c3cd3d",
+          "artifact_kind": "tweet",
+          "layer": "edge",
+          "text": "Trust is the gap you keep open long enough to score.",
+          "target_grain": "shape_of_trust",
+          "created_at": "2026-06-23T18:57:05.767480",
+          "external_ref": "https://x.com/example/status/1001",
+          "prediction": "Public reactions will separate passive agreement from artifact-seeking intent.",
+          "receipt_id": "rcpt_699f8dc51ffc",
+          "metadata": {}
+        },
+        {
+          "ping_id": "ping_6154037228a7",
+          "satellite_id": "sat_bf1133c3cd3d",
+          "artifact_kind": "thread",
+          "layer": "edge",
+          "text": "A rejection without a receipt teaches the membrane nothing.",
+          "target_grain": "shape_of_trust",
+          "created_at": "2026-06-23T22:57:05.767480",
+          "external_ref": "https://x.com/example/status/1002",
+          "prediction": "Replies and bookmarks will reveal builders who understand losable routing.",
+          "receipt_id": "rcpt_5897864ca7ea",
+          "metadata": {}
+        }
+      ],
+      "reactions": [
+        {
+          "reaction_id": "react_b6c590f819e6",
+          "ping_id": "ping_2d4f2f1d7fa0",
+          "credential": "cred_000",
+          "kind": "like",
+          "timestamp": "2026-06-23T18:52:05.767480",
+          "energy": 0.13949999999999999,
+          "grain_alignment": 0.55,
+          "route_taken": "recognition",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_e8e8c35524ec",
+          "ping_id": "ping_6154037228a7",
+          "credential": "cred_000",
+          "kind": "reply",
+          "timestamp": "2026-06-24T00:57:05.767480",
+          "energy": 0.6824999999999999,
+          "grain_alignment": 0.82,
+          "route_taken": "asks_for_receipt_schema",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_d261639e45d0",
+          "ping_id": "ping_2d4f2f1d7fa0",
+          "credential": "cred_007",
+          "kind": "repost",
+          "timestamp": "2026-06-23T19:57:05.767480",
+          "energy": 0.3195,
+          "grain_alignment": 0.42,
+          "route_taken": "generic_agreement",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_989928a957c0",
+          "ping_id": "ping_6154037228a7",
+          "credential": "cred_007",
+          "kind": "ignore",
+          "timestamp": "2026-06-24T08:57:05.767480",
+          "energy": 0.0,
+          "grain_alignment": 0.1,
+          "route_taken": "no_followthrough",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_0b16b597e646",
+          "ping_id": "ping_2d4f2f1d7fa0",
+          "credential": "cred_014",
+          "kind": "quote",
+          "timestamp": "2026-06-23T20:57:05.767480",
+          "energy": 0.846,
+          "grain_alignment": 0.88,
+          "route_taken": "applies_to_own_system",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_b74edada14ed",
+          "ping_id": "ping_2d4f2f1d7fa0",
+          "credential": "cred_021",
+          "kind": "view",
+          "timestamp": "2026-06-23T21:57:05.767480",
+          "energy": 0.03,
+          "grain_alignment": 0.2,
+          "route_taken": "scroll_past",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_1a195b510940",
+          "ping_id": "ping_6154037228a7",
+          "credential": "cred_021",
+          "kind": "like",
+          "timestamp": "2026-06-23T23:57:05.767480",
+          "energy": 0.11249999999999999,
+          "grain_alignment": 0.25,
+          "route_taken": "low_context_like",
+          "source_ref": null,
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "satellite_id": "sat_ac87d1868c79",
+      "name": "Apprentice Artifact Echo",
+      "layer": "apprentice",
+      "orbit": 0.58,
+      "purpose": "Measure who reacts to apprentice-created artifacts with usable specificity.",
+      "target_grain": "application",
+      "deployed_at": "2026-06-24T18:57:05.767480",
+      "pings": [
+        {
+          "ping_id": "ping_710f20246f1d",
+          "satellite_id": "sat_ac87d1868c79",
+          "artifact_kind": "demo",
+          "layer": "apprentice",
+          "text": "Apprentice flow dashboard snapshot",
+          "target_grain": "application",
+          "created_at": "2026-06-24T18:57:05.767480",
+          "external_ref": "docs/apprentice-flow.html",
+          "prediction": "Specific clicks and replies reveal readiness to apply the lens.",
+          "receipt_id": "rcpt_1fa61230cf2d",
+          "metadata": {}
+        }
+      ],
+      "reactions": [
+        {
+          "reaction_id": "react_225dabe87696",
+          "ping_id": "ping_710f20246f1d",
+          "credential": "cred_000",
+          "kind": "click",
+          "timestamp": "2026-06-24T22:57:05.767480",
+          "energy": 0.48950000000000005,
+          "grain_alignment": 0.78,
+          "route_taken": "opens_flow_queue",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_630aea497b82",
+          "ping_id": "ping_710f20246f1d",
+          "credential": "cred_014",
+          "kind": "bookmark",
+          "timestamp": "2026-06-25T00:57:05.767480",
+          "energy": 0.5850000000000001,
+          "grain_alignment": 0.8,
+          "route_taken": "saves_dashboard",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_1795d0265958",
+          "ping_id": "ping_710f20246f1d",
+          "credential": "cred_028",
+          "kind": "apply",
+          "timestamp": "2026-06-25T02:57:05.767480",
+          "energy": 0.96,
+          "grain_alignment": 0.92,
+          "route_taken": "posts_case_note",
+          "source_ref": null,
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "satellite_id": "sat_6273a6d8a972",
+      "name": "Journeyman Collaboration Probe",
+      "layer": "journeyman",
+      "orbit": 0.24,
+      "purpose": "Measure high-altitude reactions to deeper collaboration artifacts.",
+      "target_grain": "well_design",
+      "deployed_at": "2026-06-25T06:57:05.767480",
+      "pings": [
+        {
+          "ping_id": "ping_5c41f627594a",
+          "satellite_id": "sat_6273a6d8a972",
+          "artifact_kind": "prompt",
+          "layer": "journeyman",
+          "text": "Design your own well from three prediction receipts.",
+          "target_grain": "well_design",
+          "created_at": "2026-06-25T06:57:05.767480",
+          "external_ref": null,
+          "prediction": "High-resolution responses reveal journeyman-grade well design orientation.",
+          "receipt_id": "rcpt_5a16cf4dddc6",
+          "metadata": {}
+        }
+      ],
+      "reactions": [
+        {
+          "reaction_id": "react_470055a28c9d",
+          "ping_id": "ping_5c41f627594a",
+          "credential": "cred_014",
+          "kind": "reply",
+          "timestamp": "2026-06-25T08:57:05.767480",
+          "energy": 0.7124999999999999,
+          "grain_alignment": 0.9,
+          "route_taken": "submits_well_spec",
+          "source_ref": null,
+          "metadata": {}
+        },
+        {
+          "reaction_id": "react_acf31af1b7e7",
+          "ping_id": "ping_5c41f627594a",
+          "credential": "cred_028",
+          "kind": "reply",
+          "timestamp": "2026-06-25T10:57:05.767480",
+          "energy": 0.6975,
+          "grain_alignment": 0.86,
+          "route_taken": "designs_satellite",
+          "source_ref": null,
+          "metadata": {}
+        }
+      ]
+    }
+  ],
+  "reads": [
+    {
+      "credential": "cred_000",
+      "estimated_orbit": 0.544,
+      "layer": "apprentice",
+      "confidence": 0.37,
+      "bearing": {
+        "shape_of_trust": 0.714,
+        "application": 0.429
+      },
+      "evidence_ping_ids": [
+        "ping_2d4f2f1d7fa0",
+        "ping_6154037228a7",
+        "ping_710f20246f1d"
+      ],
+      "summary": "Strongest bearing: shape_of_trust; 3 posted reactions across satellite pings."
+    },
+    {
+      "credential": "cred_007",
+      "estimated_orbit": 0.868,
+      "layer": "visitor",
+      "confidence": 0.15,
+      "bearing": {
+        "shape_of_trust": 0.174
+      },
+      "evidence_ping_ids": [
+        "ping_2d4f2f1d7fa0",
+        "ping_6154037228a7"
+      ],
+      "summary": "Strongest bearing: shape_of_trust; 2 posted reactions across satellite pings."
+    },
+    {
+      "credential": "cred_014",
+      "estimated_orbit": 0.289,
+      "layer": "journeyman",
+      "confidence": 0.575,
+      "bearing": {
+        "shape_of_trust": 0.792,
+        "well_design": 0.675,
+        "application": 0.52
+      },
+      "evidence_ping_ids": [
+        "ping_2d4f2f1d7fa0",
+        "ping_5c41f627594a",
+        "ping_710f20246f1d"
+      ],
+      "summary": "Strongest bearing: shape_of_trust; 3 posted reactions across satellite pings."
+    },
+    {
+      "credential": "cred_021",
+      "estimated_orbit": 0.948,
+      "layer": "edge",
+      "confidence": 0.057,
+      "bearing": {
+        "shape_of_trust": 0.055
+      },
+      "evidence_ping_ids": [
+        "ping_2d4f2f1d7fa0",
+        "ping_6154037228a7"
+      ],
+      "summary": "Strongest bearing: shape_of_trust; 2 posted reactions across satellite pings."
+    },
+    {
+      "credential": "cred_028",
+      "estimated_orbit": 0.038,
+      "layer": "journeyman",
+      "confidence": 0.438,
+      "bearing": {
+        "application": 0.92,
+        "well_design": 0.645
+      },
+      "evidence_ping_ids": [
+        "ping_5c41f627594a",
+        "ping_710f20246f1d"
+      ],
+      "summary": "Strongest bearing: application; 2 posted reactions across satellite pings."
+    }
+  ],
+  "receipts": [
+    {
+      "receipt_id": "rcpt_699f8dc51ffc",
+      "credential": "satellite:sat_bf1133c3cd3d",
+      "kind": "existing_well",
+      "predicted_destination": "layer:edge:shape_of_trust",
+      "prediction": "Public reactions will separate passive agreement from artifact-seeking intent.",
+      "confidence": 0.5,
+      "issued_at": "2026-06-23T18:57:05.767480",
+      "settle_after_events": 5,
+      "settle_by": null,
+      "status": "confirmed",
+      "settled_at": "2026-06-24T08:57:05.767480",
+      "settlement_reason": "satellite reaction alignment avg=0.55 over 5 events",
+      "evidence_event_ids": []
+    },
+    {
+      "receipt_id": "rcpt_5897864ca7ea",
+      "credential": "satellite:sat_bf1133c3cd3d",
+      "kind": "existing_well",
+      "predicted_destination": "layer:edge:shape_of_trust",
+      "prediction": "Replies and bookmarks will reveal builders who understand losable routing.",
+      "confidence": 0.5,
+      "issued_at": "2026-06-23T22:57:05.767480",
+      "settle_after_events": 5,
+      "settle_by": null,
+      "status": "confirmed",
+      "settled_at": "2026-06-24T08:57:05.767480",
+      "settlement_reason": "satellite reaction alignment avg=0.55 over 5 events",
+      "evidence_event_ids": []
+    },
+    {
+      "receipt_id": "rcpt_1fa61230cf2d",
+      "credential": "satellite:sat_ac87d1868c79",
+      "kind": "existing_well",
+      "predicted_destination": "layer:apprentice:application",
+      "prediction": "Specific clicks and replies reveal readiness to apply the lens.",
+      "confidence": 0.5,
+      "issued_at": "2026-06-24T18:57:05.767480",
+      "settle_after_events": 5,
+      "settle_by": null,
+      "status": "pending",
+      "settled_at": null,
+      "settlement_reason": "",
+      "evidence_event_ids": []
+    },
+    {
+      "receipt_id": "rcpt_5a16cf4dddc6",
+      "credential": "satellite:sat_6273a6d8a972",
+      "kind": "existing_well",
+      "predicted_destination": "layer:journeyman:well_design",
+      "prediction": "High-resolution responses reveal journeyman-grade well design orientation.",
+      "confidence": 0.5,
+      "issued_at": "2026-06-25T06:57:05.767480",
+      "settle_after_events": 5,
+      "settle_by": null,
+      "status": "pending",
+      "settled_at": null,
+      "settlement_reason": "",
+      "evidence_event_ids": []
+    }
+  ],
+  "reaction_count": 12,
+  "ping_count": 4
+};
