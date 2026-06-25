@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trust Substrate OS — Orbital Map</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0b0d10;
+    color: #d8dde6;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  header {
+    padding: 14px 24px;
+    border-bottom: 1px solid #1c1f26;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.03em;
+  }
+  header .subtitle {
+    font-size: 11px;
+    color: #9aa0ab;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    padding: 16px;
+  }
+  .panel {
+    background: #111418;
+    border: 1px solid #1e2228;
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .panel h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8b929d;
+    margin: 0 0 10px 0;
+    font-weight: 600;
+  }
+  #canvas {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(circle at center, #141a21 0%, #0b0d10 70%);
+    border-radius: 6px;
+    border: 1px solid #1e2228;
+  }
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #1e2228;
+  }
+  .metric:last-child { border-bottom: none; }
+  .metric .label { color: #9aa0ab; }
+  .metric .value { font-variant-numeric: tabular-nums; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .tooltip {
+    position: fixed;
+    background: rgba(15,17,20,0.95);
+    border: 1px solid #2a2f38;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #d8dde6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    max-width: 260px;
+  }
+  .actor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .actor-row:hover {
+    background: #181c22;
+    border-color: #262b35;
+  }
+  .actor-row.selected {
+    background: #181c22;
+    border-color: #2e3340;
+  }
+  .actor-name {
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .actor-meta {
+    color: #9aa0ab;
+    font-size: 11px;
+  }
+  footer {
+    padding: 10px 16px;
+    color: #76808a;
+    font-size: 11px;
+    border-top: 1px solid #1c1f26;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Trust Substrate OS — Orbital Map</h1>
+    <div class="subtitle">fake data · not connected to live engine yet</div>
+  </div>
+  <div>
+    <span class="subtitle" id="clock"></span>
+  </div>
+</header>
+<div class="layout">
+  <div>
+    <div class="panel" style="margin-bottom: 12px;">
+      <h2>Current view</h2>
+      <canvas id="canvas" width="900" height="900"></canvas>
+    </div>
+  </div>
+  <div>
+    <div class="panel" style="margin-bottom: 12px;">
+      <h2>Flow health</h2>
+      <div id="flow"></div>
+    </div>
+    <div class="panel" style="margin-bottom: 12px;">
+      <h2>Legend</h2>
+      <div class="legend-item"><span class="dot" style="background:#22c55e;"></span> Trusted / fit</div>
+      <div class="legend-item"><span class="dot" style="background:#eab308;"></span> Pending evaluation</div>
+      <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> Extractive / ejected</div>
+      <div class="legend-item"><span class="dot" style="background:#6366f1;"></span> Wormhole routed</div>
+    </div>
+    <div class="panel">
+      <h2>Selected actor</h2>
+      <div id="selected">Click a point on the map.</div>
+    </div>
+  </div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<footer>
+  Day 0 accuracy: 14%. Both misses published.
+</footer>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const flowEl = document.getElementById('flow');
+const selEl = document.getElementById('selected');
+const tooltip = document.getElementById('tooltip');
+const clockEl = document.getElementById('clock');
+
+const FAKE_ACTORS = generateFakeActors(38);
+let selectedId = null;
+
+function generateFakeActors(n) {
+  const out = [];
+  const firstNames = ["kai","nova","sage","river","luna","orion","aya","moss","kira","enzo","ivy","asen","teal","mira","juno","wren","dax","elle"];
+  const lastParts = ["00","01","76","92","17","44","63","21","55","39","88","15","47","60","33"];
+  for (let i = 0; i < n; i++) {
+    const isFit = Math.random() < 0.35;
+    const isExtractive = !isFit && Math.random() < 0.45;
+    const isRouted = !isFit && !isExtractive && Math.random() < 0.35;
+    const category = isFit ? "fit" : (isExtractive ? "extractive" : (isRouted ? "routed" : "pending"));
+    const orbit = isFit ? Math.random() * 0.35 : (isExtractive ? 0.65 + Math.random() * 0.3 : (isRouted ? 0.4 + Math.random() * 0.3 : 0.4 + Math.random() * 0.5));
+    const angle = Math.random() * Math.PI * 2;
+    out.push({
+      id: `cred_${String(i).padStart(3,'0')}`,
+      name: `${firstNames[(i*3)%firstNames.length]}-${lastParts[(i*7)%lastParts.length]}`,
+      category,
+      orbit,
+      angle,
+      grain: isFit ? 0.75 + Math.random() * 0.25 : (isExtractive ? Math.random() * 0.3 : 0.4 + Math.random() * 0.4),
+      divergence: isFit ? Math.random() * 0.3 : (isExtractive ? 0.6 + Math.random() * 0.4 : Math.random() * 0.6),
+      events: Math.floor(2 + Math.random() * 18),
+      trend: ["rising","steady","decaying"][Math.floor(Math.random()*3)],
+    });
+  }
+  return out;
+}
+
+function project(orbit, angle, cx, cy, maxR) {
+  const r = orbit * maxR;
+  return {
+    x: cx + Math.cos(angle) * r,
+    y: cy + Math.sin(angle) * r,
+  };
+}
+
+function draw() {
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W / 2;
+  const cy = H / 2;
+  const maxR = Math.min(cx, cy) * 0.82;
+
+  // orbit rings
+  [0.15, 0.35, 0.6, 0.85].forEach(o => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, o * maxR, 0, Math.PI * 2);
+    ctx.strokeStyle = "#1e2228";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // well center
+  const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 22);
+  grad.addColorStop(0, "rgba(255,255,255,0.25)");
+  grad.addColorStop(1, "rgba(255,255,255,0.0)");
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "#d8dde6";
+  ctx.fill();
+
+  // zone arcs
+  ctx.save();
+  ctx.translate(cx, cy);
+  ["entry","depth","journeyman edge"].forEach((label, idx) => {
+    const r = [0.18, 0.5, 0.78][idx] * maxR;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, -0.6, 0.6);
+    ctx.strokeStyle = "#2a2f38";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#6b7280";
+    ctx.font = "10px ui-monospace, monospace";
+    ctx.fillText(label, r + 6, 4);
+  });
+  ctx.restore();
+
+  // actors
+  const palette = {
+    fit: "#22c55e",
+    pending: "#eab308",
+    extractive: "#ef4444",
+    routed: "#6366f1",
+  };
+  FAKE_ACTORS.forEach(a => {
+    const p = project(a.orbit, a.angle, cx, cy, maxR);
+    const color = palette[a.category] || "#999";
+    const r = selectedId === a.id ? 7 : 4;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = selectedId === a.id ? 1 : 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // glow on selected
+    if (selectedId === a.id) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  });
+}
+
+function hitTest(x, y) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const px = (x - rect.left) * scaleX;
+  const py = (y - rect.top) * scaleY;
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const maxR = Math.min(cx, cy) * 0.82;
+  let best = null;
+  let bestDist = 18; // pick radius
+  FAKE_ACTORS.forEach(a => {
+    const p = project(a.orbit, a.angle, cx, cy, maxR);
+    const d = Math.hypot(p.x - px, p.y - py);
+    if (d < bestDist) { bestDist = d; best = a; }
+  });
+  return best;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const a = hitTest(e.clientX, e.clientY);
+  if (a) {
+    tooltip.style.opacity = 1;
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY + 14) + 'px';
+    tooltip.innerHTML = `<strong>${a.name}</strong><br>orbit ${a.orbit.toFixed(2)}<br>grain ${a.grain.toFixed(2)}<br>events ${a.events}`;
+  } else {
+    tooltip.style.opacity = 0;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  tooltip.style.opacity = 0;
+});
+
+canvas.addEventListener('click', e => {
+  const a = hitTest(e.clientX, e.clientY);
+  selectedId = a ? a.id : null;
+  draw();
+  renderSelected();
+});
+
+function renderFlow() {
+  const fits = FAKE_ACTORS.filter(a => a.category === 'fit').length;
+  const pending = FAKE_ACTORS.filter(a => a.category === 'pending').length;
+  const extractive = FAKE_ACTORS.filter(a => a.category === 'extractive').length;
+  const routed = FAKE_ACTORS.filter(a => a.category === 'routed').length;
+  const total = FAKE_ACTORS.length;
+  const rows = [
+    ["Total actors", total],
+    ["Trusted (fit)", fits],
+    ["Pending", pending],
+    ["Extractive / ejected", extractive],
+    ["Routed (wormhole)", routed],
+    ["Overall conversion", `${((fits/total)*100).toFixed(1)}%`],
+  ];
+  flowEl.innerHTML = rows.map(([l,v]) => `
+    <div class="metric">
+      <div class="label">${l}</div>
+      <div class="value">${v}</div>
+    </div>
+  `).join('');
+}
+
+function renderSelected() {
+  if (!selectedId) { selEl.innerHTML = 'Click a point on the map.'; return; }
+  const a = FAKE_ACTORS.find(x => x.id === selectedId);
+  if (!a) return;
+  selEl.innerHTML = `
+    <div class="actor-row selected">
+      <div>
+        <div class="actor-name">${a.name}</div>
+        <div class="actor-meta">${a.id} · category: ${a.category}</div>
+        <div class="actor-meta">orbit ${a.orbit.toFixed(3)} · with-grain ${(a.grain*100).toFixed(0)}% · divergence ${a.divergence.toFixed(2)}</div>
+        <div class="actor-meta">events ${a.events} · trend ${a.trend}</div>
+      </div>
+    </div>
+  `;
+}
+
+function clock() {
+  const d = new Date();
+  clockEl.textContent = d.toISOString().replace('T',' ').slice(0,19) + ' UTC';
+}
+clock();
+setInterval(clock, 1000);
+
+draw();
+renderFlow();
+renderSelected();
+</script>
+</body>
+</html>
