@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trust Substrate OS — Apprentice Flow</title>
+<style>
+*{box-sizing:border-box} body{margin:0;background:#0b0d10;color:#d8dde6;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px} header{padding:14px 20px;border-bottom:1px solid #20242b;display:flex;justify-content:space-between;gap:16px} h1{font-size:14px;margin:0}.muted{color:#8b929d}.layout{display:grid;grid-template-columns:360px 1fr 360px;gap:14px;padding:14px}.panel{background:#111418;border:1px solid #20242b;border-radius:7px;padding:12px}h2{font-size:11px;color:#8b929d;text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px}.metric{display:flex;justify-content:space-between;border-bottom:1px dashed #252a33;padding:7px 0}.metric:last-child{border-bottom:none}.queue{max-height:74vh;overflow:auto}.item{padding:9px;border:1px solid #20242b;border-radius:6px;margin-bottom:8px;cursor:pointer;background:#0f1216}.item:hover,.item.selected{border-color:#475569;background:#151a20}.pill{display:inline-block;padding:2px 6px;border-radius:999px;font-size:10px;margin-bottom:5px}.ready_to_graduate{background:#064e3b;color:#86efac}.ready_but_blocked{background:#713f12;color:#fde68a}.flagged_turn{background:#7f1d1d;color:#fecaca}.directional_route,.synthesize_provisional_well{background:#312e81;color:#c7d2fe}.needs_signal{background:#374151;color:#d1d5db}.apprentice_active{background:#1e3a8a;color:#bfdbfe}.release_decayed{background:#3f3f46;color:#e4e4e7}canvas{width:100%;height:520px;background:radial-gradient(circle at center,#151b23,#080a0d 75%);border:1px solid #20242b;border-radius:7px}.bar{height:8px;background:#20242b;border-radius:99px;overflow:hidden}.bar>span{display:block;height:100%;background:#22c55e}.receipt{font-size:11px;border:1px solid #252a33;padding:8px;border-radius:5px;margin:6px 0}.warn{color:#fbbf24}.bad{color:#fca5a5}.good{color:#86efac}</style>
+</head>
+<body>
+<header><div><h1>Apprentice → Journeyman σ-Flow</h1><div class="muted">Mind Lab sun · prediction receipts · λ-gated graduation · no tarpit</div></div><div class="muted" id="stamp"></div></header>
+<div class="layout">
+  <div class="panel"><h2>Flow queue</h2><div id="queue" class="queue">loading…</div></div>
+  <div><canvas id="map" width="900" height="520"></canvas><div class="panel" style="margin-top:14px"><h2>Selected actor</h2><div id="selected">Select an item.</div></div></div>
+  <div>
+    <div class="panel"><h2>Sun / corpus</h2><div id="sun"></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Capacity + λ</h2><div id="capacity"></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Honest metrics</h2><div id="metrics"></div></div>
+    <div class="panel" style="margin-top:14px"><h2>Receipts</h2><div id="receipts"></div></div>
+  </div>
+</div>
+<script src="flow-data.js"></script>
+<script>
+let DATA=null, selected=null; const C=document.getElementById('map'), ctx=C.getContext('2d');
+const COLORS={ready_to_graduate:'#22c55e',ready_but_blocked:'#eab308',flagged_turn:'#ef4444',directional_route:'#6366f1',synthesize_provisional_well:'#8b5cf6',needs_signal:'#94a3b8',apprentice_active:'#3b82f6',release_decayed:'#71717a'};
+async function load(){if(window.FLOW_DATA){DATA=window.FLOW_DATA;render();return} try{DATA=await (await fetch('flow.json?_='+Date.now())).json()}catch(e){document.body.innerHTML='<pre>Missing docs/flow.json. Run: PYTHONPATH=src python scripts/export-flow-snapshot.py --out docs/flow.json</pre>';return} render();}
+function metric(l,v){return `<div class="metric"><span class="muted">${l}</span><span>${v}</span></div>`}
+function render(){document.getElementById('stamp').textContent=new Date().toISOString().slice(0,19)+' UTC'; renderQueue(); renderSide(); draw(); renderSelected();}
+function renderQueue(){const q=document.getElementById('queue'); q.innerHTML=DATA.queue.map(item=>`<div class="item ${selected&&selected.credential===item.credential?'selected':''}" onclick="selectActor('${item.credential}')"><span class="pill ${item.decision}">${item.decision}</span><div><b>${item.credential}</b></div><div class="muted">${item.reason}</div><div class="muted">→ ${item.recommended_action}</div></div>`).join('')}
+function renderSide(){const s=DATA.sun; document.getElementById('sun').innerHTML=[metric('name',s.name),metric('mass',s.mass.toFixed(2)),metric('files',s.file_count),metric('words',s.word_count.toLocaleString()),metric('emissions',s.emissions.join(', '))].join(''); const c=DATA.capacity; const lambda=DATA.lambda.rate; document.getElementById('capacity').innerHTML=[metric('apprentices',`${c.apprentice_active} active / ${c.apprentice_open} open`),metric('journeymen',`${c.journeyman_active} active / ${c.journeyman_open} open`),metric('λ rate',lambda),`<div class="muted" style="margin-top:8px">Trust grows no faster than settled receipts. Graduation is blocked if λ is too low.</div>`].join(''); document.getElementById('metrics').innerHTML=Object.entries(DATA.metrics).map(([k,v])=>metric(k,typeof v==='number'?v.toFixed(3):v)).join(''); document.getElementById('receipts').innerHTML=DATA.receipts.slice(0,8).map(r=>`<div class="receipt"><b>${r.kind}</b> <span class="muted">${r.status}</span><br>${r.credential} → ${r.destination}<br><span class="muted">${r.prediction}</span></div>`).join('')}
+function selectActor(cred){selected=DATA.actors.find(a=>a.credential===cred); renderQueue(); renderSelected(); draw();}
+function selectedDecision(a){return DATA.queue.find(q=>q.credential===a.credential)}
+function renderSelected(){const el=document.getElementById('selected'); if(!selected){el.innerHTML='Select an actor from the flow queue.';return} const q=selectedDecision(selected); const rs=DATA.receipts.filter(r=>r.credential===selected.credential); el.innerHTML=`<h3 style="margin:0 0 8px">${selected.credential}</h3>`+[metric('tier',selected.tier),metric('altitude',selected.altitude),metric('orbit',selected.orbit),metric('σ_w',selected.sigma_w),metric('σ_s',selected.sigma_s),metric('λ',selected.lambda_rate),metric('decision',q?q.decision:'none'),metric('action',q?q.recommended_action:'continue')].join('')+`<h2 style="margin-top:12px">Losable claims</h2>`+(rs.length?rs.map(r=>`<div class="receipt"><b>${r.receipt_id}</b> · ${r.status}<br>${r.prediction}<br><span class="muted">falsifier: subsequent posted events fail to settle at ${r.destination}</span></div>`).join(''):'<div class="muted">No receipts yet.</div>')}
+function draw(){ctx.clearRect(0,0,C.width,C.height); const cx=450, cy=260; [70,130,200,270].forEach(r=>{ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#20242b';ctx.stroke()}); ctx.beginPath();ctx.arc(cx,cy,30,0,Math.PI*2);ctx.fillStyle='#f59e0b';ctx.fill();ctx.fillStyle='#fbbf24';ctx.fillText(DATA.sun.name,cx+36,cy-10); DATA.actors.forEach((a,i)=>{const q=selectedDecision(a)||{}; const angle=(i/DATA.actors.length)*Math.PI*2; const r=60+a.orbit*240; const x=cx+Math.cos(angle)*r,y=cy+Math.sin(angle)*r; ctx.beginPath();ctx.arc(x,y,selected&&selected.credential===a.credential?6:4,0,Math.PI*2);ctx.fillStyle=COLORS[q.decision]||'#94a3b8';ctx.fill(); if(selected&&selected.credential===a.credential){ctx.beginPath();ctx.arc(x,y,14,0,Math.PI*2);ctx.strokeStyle=ctx.fillStyle;ctx.stroke();}})}
+load();
+</script>
+</body>
+</html>
