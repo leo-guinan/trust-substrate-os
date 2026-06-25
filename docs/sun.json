@@ -1,0 +1,23 @@
+{
+  "id": "sun_mind_lab",
+  "name": "Mind Lab",
+  "display_name": "Mind Lab",
+  "description": "# Mind Lab",
+  "mass": 6.203333333333332,
+  "color": "#f59e0b",
+  "emissions": [
+    "Mind",
+    "Lab"
+  ],
+  "bonds": [
+    {
+      "name": "leo-guinan/mind-lab",
+      "strength": 0.8
+    }
+  ],
+  "last_commit": "2026-06-13",
+  "file_count": 13,
+  "word_count": 50534,
+  "commit_count": 3,
+  "active_days": 1
+}

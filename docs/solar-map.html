@@ -161,8 +161,31 @@ const tooltip = document.getElementById('tooltip');
 const clockEl = document.getElementById('clock');
 
 const CX = 500, CY = 500;
-const DATA = generateUniverse();
-let selected = null;
+let DATA = null;
+let DATA_SOURCE = 'fake';
+async function loadUniverse() {
+  try {
+    const res = await fetch('sun.json?_=' + Date.now());
+    if (res.ok) {
+      const sun = await res.json();
+      const fake = generateUniverse();
+      // merge real sun, keep fake actors for now
+      DATA = { sun, actors: fake.actors, maxR: fake.maxR };
+      DATA_SOURCE = 'real';
+    } else {
+      throw new Error('not ok');
+    }
+  } catch (e) {
+    DATA_SOURCE = 'fake';
+    DATA = generateUniverse();
+  }
+  document.querySelector('.subtitle').textContent =
+    DATA_SOURCE === 'real' ? 'powered by mind-lab corpus' : 'fake data · sun = corpus, planets = actors · outer = entry, inner = journeyman';
+  renderHealth();
+  renderSelected();
+  draw();
+}
+loadUniverse();
 
 function generateUniverse() {
   // One sun at center = corpus of work
@@ -297,7 +320,10 @@ canvas.addEventListener('mousemove', e => {
     tooltip.style.left = (e.clientX + 14) + 'px';
     tooltip.style.top = (e.clientY + 14) + 'px';
     if (hit.kind === 'sun') {
-      tooltip.innerHTML = `<strong>${hit.ref.name}</strong><br>corpus mass ${hit.ref.mass.toFixed(1)}<br>${DATA.actors.length} planets in orbit`;
+    const extra = (DATA_SOURCE === 'real' && DATA.sun.last_commit)
+      ? `<br>last commit ${DATA.sun.last_commit}<br>${DATA.sun.file_count.toLocaleString()} files · ${DATA.sun.word_count.toLocaleString()} words`
+      : `<br>${DATA.actors.length} planets in orbit`;
+    tooltip.innerHTML = `<strong>${hit.ref.name}</strong><br>corpus mass ${hit.ref.mass.toFixed(1)} · ${DATA_SOURCE}${extra}`;
     } else {
       tooltip.innerHTML = `<strong>${hit.ref.name}</strong><br>orbit ${hit.ref.orbit.toFixed(1)}<br>${hit.ref.category} · ${hit.ref.events} events`;
     }
@@ -340,15 +366,22 @@ function renderHealth() {
 function renderSelected() {
   if (!selected) { selEl.innerHTML = 'Click a sun or planet.'; return; }
   if (selected.id === DATA.sun.id) {
-    selEl.innerHTML = `
-      <div class="actor-row selected">
-        <div>
-          <div class="actor-name">${selected.name} (sun)</div>
-          <div class="actor-meta">mass ${selected.mass.toFixed(1)} · ${DATA.actors.length} planets orbiting</div>
-          <div class="actor-meta">This is the corpus — the body of work generating gravitational pull.</div>
-        </div>
-      </div>
-    `;
+    const meta = DATA_SOURCE === 'real' ? [
+      `mass ${selected.mass.toFixed(1)}`,
+      `files ${DATA.sun.file_count.toLocaleString()}`,
+      `words ${DATA.sun.word_count.toLocaleString()}`,
+      `commits ${DATA.sun.commit_count}`,
+      `last commit ${DATA.sun.last_commit}`,
+      `emissions: ${DATA.sun.emissions.join(', ')}`,
+      DATA.sun.bonds.length ? `bonds: ${DATA.sun.bonds.map(b => b.name).join(', ')}` : 'bonds: none',
+      DATA.sun.description,
+      `id: ${DATA.sun.id}`,
+    ] : [
+      `mass ${selected.mass.toFixed(1)}`,
+      `${DATA.actors.length} planets orbiting`,
+      'This is the corpus — the body of work generating gravitational pull.',
+    ];
+    selEl.innerHTML = `\n      <div class="actor-row selected">\n        <div>\n          <div class="actor-name">${selected.name} (sun)</div>\n          ${meta.map(m => `<div class="actor-meta">${m}</div>`).join('')}\n        </div>\n      </div>\n    `;
     return;
   }
   const a = selected;
