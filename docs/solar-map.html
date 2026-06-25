@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trust Substrate OS — Solar Map</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0b0d10;
+    color: #d8dde6;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  header {
+    padding: 14px 24px;
+    border-bottom: 1px solid #1c1f26;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.03em;
+  }
+  header .subtitle {
+    font-size: 11px;
+    color: #9aa0ab;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+    padding: 16px;
+  }
+  .panel {
+    background: #111418;
+    border: 1px solid #1e2228;
+    border-radius: 6px;
+    padding: 12px;
+  }
+  .panel h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8b929d;
+    margin: 0 0 10px 0;
+    font-weight: 600;
+  }
+  #canvas {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(circle at center, #141a21 0%, #0b0d10 70%);
+    border-radius: 6px;
+    border: 1px solid #1e2228;
+  }
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #1e2228;
+  }
+  .metric:last-child { border-bottom: none; }
+  .metric .label { color: #9aa0ab; }
+  .metric .value { font-variant-numeric: tabular-nums; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .tooltip {
+    position: fixed;
+    background: rgba(15,17,20,0.95);
+    border: 1px solid #2a2f38;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #d8dde6;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    max-width: 260px;
+  }
+  .actor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .actor-row:hover { background: #181c22; border-color: #262b35; }
+  .actor-row.selected { background: #181c22; border-color: #2e3340; }
+  .actor-name { font-weight: 600; font-size: 12px; }
+  .actor-meta { color: #9aa0ab; font-size: 11px; }
+  footer {
+    padding: 10px 16px;
+    color: #76808a;
+    font-size: 11px;
+    border-top: 1px solid #1c1f26;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Trust Substrate OS — Solar Map</h1>
+    <div class="subtitle">fake data · sun = corpus, planets = actors · outer = entry, inner = journeyman</div>
+  </div>
+  <div>
+    <span class="subtitle" id="clock"></span>
+  </div>
+</header>
+<div class="layout">
+  <div>
+    <div class="panel" style="margin-bottom: 12px;">
+      <h2>Current view</h2>
+      <canvas id="canvas" width="1000" height="1000"></canvas>
+    </div>
+  </div>
+  <div>
+    <div class="panel" style="margin-bottom: 12px;">
+      <h2>System health</h2>
+      <div id="health"></div>
+    </div>
+    <div class="panel" style="margin-bottom: 12px;">
+      <h2>Legend</h2>
+      <div class="legend-item"><span class="dot" style="background:#f59e0b;"></span> Sun (corpus / body of work)</div>
+      <div class="legend-item"><span class="dot" style="background:#22c55e;"></span> Planet — trusted/fit</div>
+      <div class="legend-item"><span class="dot" style="background:#eab308;"></span> Planet — pending</div>
+      <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> Planet — extractive / ejected</div>
+      <div class="legend-item"><span class="dot" style="background:#6366f1;"></span> Planet — wormhole routed</div>
+      <div class="legend-item" style="margin-top:4px; color:#6b7280; font-size:11px;">Inner orbits = journeyman · outer orbits = entry · rings decay in real time</div>
+    </div>
+    <div class="panel">
+      <h2>Selected</h2>
+      <div id="selected">Click a sun or planet.</div>
+    </div>
+  </div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<footer>
+  Day 0 accuracy: 14%. Both misses published.
+</footer>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const healthEl = document.getElementById('health');
+const selEl = document.getElementById('selected');
+const tooltip = document.getElementById('tooltip');
+const clockEl = document.getElementById('clock');
+
+const CX = 500, CY = 500;
+const DATA = generateUniverse();
+let selected = null;
+
+function generateUniverse() {
+  // One sun at center = corpus of work
+  const sun = { id: 'sun_corpus', name: 'Corpus', x: CX, y: CY, mass: 28 };
+
+  // Planets = actors
+  const firstNames = ["kai","nova","sage","river","luna","orion","aya","moss","kira","enzo","ivy","asen","teal","mira","juno","wren","dax","elle"];
+  const lastParts = ["00","01","76","92","17","44","63","21","55","39","88","15","47","60","33"];
+  const actors = [];
+  const maxR = 360;
+
+  for (let i = 0; i < 55; i++) {
+    const roll = Math.random();
+    const category = roll < 0.28 ? "fit" : (roll < 0.55 ? "pending" : (roll < 0.82 ? "extractive" : "routed"));
+    // Orbit: fit closer to sun, extractive farther, pending mid, routed varied
+    let orbit;
+    if (category === "fit") orbit = 55 + Math.random() * 95;        // inner
+    else if (category === "extractive") orbit = 230 + Math.random() * 110; // outer
+    else if (category === "routed") orbit = 140 + Math.random() * 140;     // mid-far
+    else orbit = 120 + Math.random() * 160;                           // pending wide
+
+    const angle = Math.random() * Math.PI * 2;
+    actors.push({
+      id: `cred_${String(i).padStart(3,'0')}`,
+      name: `${firstNames[(i*3)%firstNames.length]}-${lastParts[(i*7)%lastParts.length]}`,
+      category,
+      orbit,
+      angle,
+      grain: category === "fit" ? 0.75 + Math.random() * 0.25 : (category === "extractive" ? Math.random() * 0.3 : 0.4 + Math.random() * 0.4),
+      divergence: category === "fit" ? Math.random() * 0.3 : (category === "extractive" ? 0.6 + Math.random() * 0.4 : Math.random() * 0.6),
+      events: Math.floor(2 + Math.random() * 18),
+      trend: ["rising","steady","decaying"][Math.floor(Math.random()*3)],
+      angularVelocity: (0.0004 + Math.random() * 0.0012) * (Math.random() < 0.5 ? 1 : -1),
+    });
+  }
+  return { sun, actors, maxR };
+}
+
+function project(orbit, angle) {
+  return {
+    x: CX + Math.cos(angle) * orbit,
+    y: CY + Math.sin(angle) * orbit,
+  };
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // orbit rings (surface zones)
+  [0.18, 0.38, 0.6, 0.82].forEach(frac => {
+    ctx.beginPath();
+    ctx.arc(CX, CY, frac * DATA.maxR, 0, Math.PI * 2);
+    ctx.strokeStyle = "#1e2228";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // zone labels
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "10px ui-monospace, monospace";
+  [[0.18,"surface"],[0.38,"inner"],[0.6,"mid"],[0.82,"entry"]].forEach(([frac,label]) => {
+    ctx.fillText(label, CX + 6, CY - frac * DATA.maxR - 4);
+  });
+
+  // sun (corpus)
+  const grad = ctx.createRadialGradient(CX, CY, 4, CX, CY, DATA.sun.mass * 2);
+  grad.addColorStop(0, "rgba(245,158,11,0.45)");
+  grad.addColorStop(1, "rgba(245,158,11,0.0)");
+  ctx.beginPath();
+  ctx.arc(CX, CY, DATA.sun.mass * 2, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(CX, CY, DATA.sun.mass * 0.55, 0, Math.PI * 2);
+  ctx.fillStyle = DATA.sun.color || "#f59e0b";
+  ctx.fill();
+  ctx.fillStyle = "#fbbf24";
+  ctx.font = "11px ui-monospace, monospace";
+  ctx.fillText(DATA.sun.name, CX + DATA.sun.mass * 0.7, CY - DATA.sun.mass * 0.4);
+
+  // planets
+  const palette = { fit: "#22c55e", pending: "#eab308", extractive: "#ef4444", routed: "#6366f1" };
+  DATA.actors.forEach(a => {
+    const p = project(a.orbit, a.angle);
+    const color = palette[a.category] || "#999";
+    const r = (selected && selected.id === a.id) ? 5 : 3;
+    ctx.globalAlpha = (selected && selected.id === a.id) ? 1 : 0.85;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    if (selected && selected.id === a.id) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.4;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  });
+}
+
+function hitTest(x, y) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const px = (x - rect.left) * scaleX;
+  const py = (y - rect.top) * scaleY;
+
+  // hit sun
+  if (Math.hypot(CX - px, CY - py) < DATA.sun.mass + 6) {
+    return { kind: 'sun', ref: DATA.sun };
+  }
+
+  // hit planets
+  let best = null, bestDist = 14;
+  for (const a of DATA.actors) {
+    const p = project(a.orbit, a.angle);
+    const d = Math.hypot(p.x - px, p.y - py);
+    if (d < bestDist) { bestDist = d; best = { kind: 'actor', ref: a }; }
+  }
+  return best;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const hit = hitTest(e.clientX, e.clientY);
+  if (hit) {
+    tooltip.style.opacity = 1;
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY + 14) + 'px';
+    if (hit.kind === 'sun') {
+      tooltip.innerHTML = `<strong>${hit.ref.name}</strong><br>corpus mass ${hit.ref.mass.toFixed(1)}<br>${DATA.actors.length} planets in orbit`;
+    } else {
+      tooltip.innerHTML = `<strong>${hit.ref.name}</strong><br>orbit ${hit.ref.orbit.toFixed(1)}<br>${hit.ref.category} · ${hit.ref.events} events`;
+    }
+  } else {
+    tooltip.style.opacity = 0;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+
+canvas.addEventListener('click', e => {
+  const hit = hitTest(e.clientX, e.clientY);
+  selected = hit ? hit.ref : null;
+  draw();
+  renderSelected();
+});
+
+function renderHealth() {
+  const total = DATA.actors.length;
+  const fits = DATA.actors.filter(a => a.category === 'fit').length;
+  const pendings = DATA.actors.filter(a => a.category === 'pending').length;
+  const extractives = DATA.actors.filter(a => a.category === 'extractive').length;
+  const routed = DATA.actors.filter(a => a.category === 'routed').length;
+  const rows = [
+    ["Planets", total],
+    ["Trusted/fit", fits],
+    ["Pending", pendings],
+    ["Extractive/ejected", extractives],
+    ["Wormhole routed", routed],
+    ["Conversion", `${((fits/total)*100).toFixed(1)}%`],
+  ];
+  healthEl.innerHTML = rows.map(([l,v]) => `
+    <div class="metric">
+      <div class="label">${l}</div>
+      <div class="value">${v}</div>
+    </div>
+  `).join('');
+}
+
+function renderSelected() {
+  if (!selected) { selEl.innerHTML = 'Click a sun or planet.'; return; }
+  if (selected.id === DATA.sun.id) {
+    selEl.innerHTML = `
+      <div class="actor-row selected">
+        <div>
+          <div class="actor-name">${selected.name} (sun)</div>
+          <div class="actor-meta">mass ${selected.mass.toFixed(1)} · ${DATA.actors.length} planets orbiting</div>
+          <div class="actor-meta">This is the corpus — the body of work generating gravitational pull.</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  const a = selected;
+  selEl.innerHTML = `
+    <div class="actor-row selected">
+      <div>
+        <div class="actor-name">${a.name}</div>
+        <div class="actor-meta">${a.id} · ${a.category}</div>
+        <div class="actor-meta">orbit ${a.orbit.toFixed(1)} from center</div>
+        <div class="actor-meta">grain ${(a.grain*100).toFixed(0)}% · divergence ${(a.divergence*100).toFixed(0)}%</div>
+        <div class="actor-meta">events ${a.events} · trend ${a.trend}</div>
+      </div>
+    </div>
+  `;
+}
+
+function tick() {
+  DATA.actors.forEach(a => {
+    a.angle += a.angularVelocity;
+    if (a.angle > Math.PI * 2) a.angle -= Math.PI * 2;
+    if (a.angle < 0) a.angle += Math.PI * 2;
+  });
+  draw();
+}
+
+function clock() {
+  const d = new Date();
+  clockEl.textContent = d.toISOString().replace('T',' ').slice(0,19) + ' UTC';
+}
+clock();
+setInterval(clock, 1000);
+setInterval(tick, 50);
+
+renderHealth();
+renderSelected();
+draw();
+</script>
+</body>
+</html>
